@@ -38,17 +38,15 @@ class ProtoDense(Model):
         x = tf.nn.softmax(x,-1)
         return x
 
-def train(training_samples, training_targets iters):
+def train(model, training_samples, training_targets, iters):
+    cce = tf.keras.losses.CategoricalCrossentropy()
     for _ in range(iters):
         for input, target in zip(training_samples, training_targets):
             with tf.GradientTape() as tape:
-                # training=True is only needed if there are layers with different
-                # behavior during training versus inference (e.g. Dropout).
-                predictions = model(images, training=True)
-                loss = loss_object(labels, predictions)
+                predictions = model(input, training=True)
+                loss = cce(targets, predictions)
                 gradients = tape.gradient(loss, model.trainable_variables)
                 optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
 
 if __name__ == "__main__":
-    
