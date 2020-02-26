@@ -2,10 +2,11 @@ import tensorflow as tf
 from tensorflow.keras.layers import Layer
 from tensorflow.keras import  Model
 import numpy as np
+from datapipeline import Datapipeline
+from datetime import datetime
 
 class ProtoDense(Model):
     def __init__(self):
-        print('model')
         super(ProtoDense, self).__init__()
         self.block_1 = DenseBlock(12, 3, (5,5), (1,1))
         self.block_2 = DenseBlock(12, 3, (5,5), (1,1))
@@ -27,7 +28,6 @@ class DenseBlock(Layer):
         self.layers = [DenseLayer(filters, kernel_size, strides) for _ in range(layers)]
 
     def call(self, x):
-        print('block call')
         for layer in self.layers:
             x = layer(x)
         return x
@@ -35,31 +35,43 @@ class DenseBlock(Layer):
 
 class DenseLayer(Layer):
     def __init__(self, filters, kernel_size, strides):
-        print('layer')
         super(DenseLayer, self).__init__()
         self.convolutions = tf.keras.layers.Conv2D(filters, kernel_size, strides, padding='SAME', activation=tf.nn.relu)
 
     def call(self, x):
-        print('layer_call')
         new_feature_maps = self.convolutions(x)
         feature_maps = tf.concat([new_feature_maps, x], -1)
         return feature_maps
 
 
 
-
-def train(model, training_samples, training_targets, iters):
+def train(model, pipeline, iters, model_dir):
     cce = tf.keras.losses.CategoricalCrossentropy()
-    for _ in range(iters):
-        for input, target in zip(training_samples, training_targets):
+    train_generator = pipeline.get_generator()
+    optimizer = tf.keras.optimizers.Adam()
+    losses = []
+    print('starting training')
+    for epoch in range(iters):
+        for input, target in train_generator:
+            print('before tape')
+            print('input shape', tf.shape(input))
             with tf.GradientTape() as tape:
                 predictions = model(input, training=True)
-                loss = cce(targets, predictions)
+                print('made predictions')
+                loss = cce(target, predictions)
+                print('got loss')
                 gradients = tape.gradient(loss, model.trainable_variables)
+                print('got gradients')
                 optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+                print('applied optimizer')
+            losses.append(np.mean(loss))
+            print(losses, "losses")
+            model.save_weights(model_dir+'model'+str(datetime.now()).replace(' ', '_'))
+
 
 
 if __name__ == "__main__":
     #load_data
     model = ProtoDense()
-    
+    pipeline = Datapipeline('stem_data_cropped_container', 'stem_lbl_cropped_container')
+    train(model, pipeline, 3, 'models/proto_dense_1/')

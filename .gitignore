@@ -1,6 +1,8 @@
-lbl_sw_container
-img_container
-img_samples
-lbl
-rgb
-target_container
+mass_lbl_human
+stem_lbl_cropped_container
+mass_data
+models
+stem_data_cropped_container
+stem_target_container_full_pic
+stem_data
+stem_lbl_human
