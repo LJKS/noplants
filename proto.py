@@ -4,7 +4,11 @@ from tensorflow.keras import  Model
 import numpy as np
 from datapipeline import Datapipeline
 from datetime import datetime
+from matplotlib import pyplot as plt
+import time
 
+gpu = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(gpu[0], True)
 class ProtoDense(Model):
     def __init__(self):
         super(ProtoDense, self).__init__()
@@ -14,7 +18,7 @@ class ProtoDense(Model):
         self.optimizer = tf.keras.optimizers.Adam()
 
     def call(self, x):
-        print('model_call')
+        #print('model_call')
         x = self.block_1(x)
         x = tf.nn.max_pool(x, (2,2), (1,1), 'SAME')
         x = self.block_2(x)
@@ -50,15 +54,17 @@ def train(model, pipeline, iters, model_dir):
     train_generator = pipeline.get_generator()
     optimizer = tf.keras.optimizers.Adam()
     losses = []
+    step = 0
     print('starting training')
     for epoch in range(iters):
         for input, target in train_generator:
-            print('before tape')
-            print('input shape', tf.shape(input))
-            print('input_max', tf.reduce_max(input), 'out_max', tf.reduce_max(target))
+            #print('before tape')
+            #print('input shape', tf.shape(input))
+            #print('input_max', tf.reduce_max(input), 'out_max', tf.reduce_max(target))
+            t1 = time.time()
             with tf.GradientTape() as tape:
                 predictions = model(input, training=True)
-                print('made predictions')
+                #print('made predictions')
                 loss = cce(target, predictions, compute_update_weights(target))
                 #print('loss_shape', loss)
                 #print('got loss')
@@ -66,9 +72,12 @@ def train(model, pipeline, iters, model_dir):
                 #print('got gradients')
                 optimizer.apply_gradients(zip(gradients, model.trainable_variables))
                 #print('applied optimizer')
-            losses.append(np.mean(loss))
-            print(losses, "losses")
-            model.save_weights(model_dir+'model'+str(datetime.now()).replace(' ', '_'))
+            t2 = time.time()
+            print("step took: ", t2-t1)
+            if step%400 == 0:
+                losses.append(np.mean(loss))
+                plot_progress(losses, epoch, step, model_dir)
+                model.save_weights(model_dir+'model_'+str(epoch)+'_'+str(step))
 
 def compute_update_weights(target_batch):
     epsilon = 0.1
@@ -78,27 +87,32 @@ def compute_update_weights(target_batch):
     num_good = np.sum(target_batch[:,:,:,0], (1,2))  + epsilon#should have shape [batch_size] +
     num_bad =  np.sum(target_batch[:,:,:,1], (1,2)) + epsilon#shoud have shape [batch_size]
     num_ugly = np.sum(target_batch[:,:,:,2], (1,2)) + epsilon#should have shape [batch_size]
-    print(num_good, 'num_good')
-    print(num_bad, 'num_bad')
-    print(num_ugly, 'num_ugly')
-    print((num_good + num_bad + num_ugly) / img_size, 'should be 1 each')
+    #print(num_good, 'num_good')
+    #print(num_bad, 'num_bad')
+    ##print(num_ugly, 'num_ugly')
+    #print((num_good + num_bad + num_ugly) / img_size, 'should be 1 each')
     weights_good = np.reshape((1/num_good) *img_size/3, (batch_size, 1,1))
     weights_bad = np.reshape((1/num_bad) * img_size/3, (batch_size,1,1))
     weights_ugly = np.reshape((1/num_ugly)*img_size/3, (batch_size,1,1))
-    print('weights gbu', [weights_good, weights_bad, weights_ugly])
+    #print('weights gbu', [weights_good, weights_bad, weights_ugly])
     weights = np.stack([weights_good, weights_bad, weights_ugly], axis=-1)
-    print('weight_shape', weights.shape)
+    #print('weight_shape', weights.shape)
     weights_mapped = weights*target_batch
     weights_total = np.sum(weights_mapped, axis=-1)
     #print('total weights', weights_total)
-    print(weights_total.shape, 'weights shape')
-    print(np.mean(weights_total), 'mean weight')
-    weights_total = np.clip(weights_total, 1/batch_size, 100)
+    #print(weights_total.shape, 'weights shape')
+    #print(np.mean(weights_total), 'mean weight')
+    #print(target_batch.shape[-1], "divide through")
+    weights_total = np.clip(weights_total, 1/target_batch.shape[-1], 100)
     return weights_total
+
+def plot_progress(losses, epoch, step, model_dir):
+    plt.plot(losses)
+    plt.savefig(model_dir + '_loss_' + str(epoch) + '_' + str(step), format='png')
 
 
 if __name__ == "__main__":
     #load_data
     model = ProtoDense()
     pipeline = Datapipeline('stem_data_cropped_container', 'stem_lbl_cropped_container')
-    train(model, pipeline, 3, 'models/proto_dense_1/')
+    train(model, pipeline, 200, 'models/proto_dense_weighted_1/')
