@@ -46,7 +46,7 @@ class DenseLayer(Layer):
 
 
 def train(model, pipeline, iters, model_dir):
-    cce = tf.keras.losses.CategoricalCrossentropy()
+    cce = tf.keras.losses.CategoricalCrossentropy(reduction=tf.losses.Reduction.NONE)
     train_generator = pipeline.get_generator()
     optimizer = tf.keras.optimizers.Adam()
     losses = []
@@ -55,19 +55,35 @@ def train(model, pipeline, iters, model_dir):
         for input, target in train_generator:
             print('before tape')
             print('input shape', tf.shape(input))
+            print('input_max', tf.reduce_max(input), 'out_max', tf.reduce_max(target))
             with tf.GradientTape() as tape:
                 predictions = model(input, training=True)
                 print('made predictions')
-                loss = cce(target, predictions)
-                print('got loss')
+                loss = cce(target, predictions, compute_update_weights(target))
+                #print('loss_shape', loss)
+                #print('got loss')
                 gradients = tape.gradient(loss, model.trainable_variables)
-                print('got gradients')
+                #print('got gradients')
                 optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-                print('applied optimizer')
+                #print('applied optimizer')
             losses.append(np.mean(loss))
             print(losses, "losses")
             model.save_weights(model_dir+'model'+str(datetime.now()).replace(' ', '_'))
 
+def compute_update_weights(target_batch):
+    batch_size = target_batch.shape[0]
+    img_size = target_batch.shape[1]*target_batch.shape[2]
+    num_good = np.sum(target_batch[:,:,:,0], (1,2)) #should have shape [batch_size]
+    num_bad =  np.sum(target_batch[:,:,:,1], (1,2)) #shoud have shape [batch_size]
+    num_ugly = np.sum(target_batch[:,:,:,2], (1,2)) #should have shape [batch_size]
+    weights_good = np.reshape(num_good*img_size/3, (batch_size, 1,1))
+    weights_bad = np.reshape(num_bad * img_size/3, (batch_size,1,1))
+    weights_ugly = np.reshape(num_ugly*img_size/3, (batch_size,1,1))
+    weights = np.stack([weights_good, weights_bad, weights_ugly], axis=-1)
+    weights_mapped = weights*target_batch
+    weights_total = np.sum(weights_mapped, axis=-1)
+    print(weights_total.shape, 'weights shape')
+    return weights_total
 
 
 if __name__ == "__main__":
