@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import time
 num_tests =10
 model = proto.ProtoDense()
-model.load_weights("models/proto_dense_1/model2020-02-26_10:24:58.794401")
+model.load_weights("models/proto_dense_1/model2020-02-27_14:21:03.132565")
 origin_target_directory = 'stem_lbl_human'
 origin_data_directory = 'stem_data'
 pic_names = listdir(origin_data_directory)

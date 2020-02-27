@@ -46,7 +46,7 @@ class DenseLayer(Layer):
 
 
 def train(model, pipeline, iters, model_dir):
-    cce = tf.keras.losses.CategoricalCrossentropy(reduction=tf.losses.Reduction.NONE)
+    cce = tf.keras.losses.CategoricalCrossentropy()
     train_generator = pipeline.get_generator()
     optimizer = tf.keras.optimizers.Adam()
     losses = []
@@ -71,18 +71,29 @@ def train(model, pipeline, iters, model_dir):
             model.save_weights(model_dir+'model'+str(datetime.now()).replace(' ', '_'))
 
 def compute_update_weights(target_batch):
+    epsilon = 0.1
+    target_batch = target_batch.astype(np.float64)
     batch_size = target_batch.shape[0]
     img_size = target_batch.shape[1]*target_batch.shape[2]
-    num_good = np.sum(target_batch[:,:,:,0], (1,2)) #should have shape [batch_size]
-    num_bad =  np.sum(target_batch[:,:,:,1], (1,2)) #shoud have shape [batch_size]
-    num_ugly = np.sum(target_batch[:,:,:,2], (1,2)) #should have shape [batch_size]
-    weights_good = np.reshape(num_good*img_size/3, (batch_size, 1,1))
-    weights_bad = np.reshape(num_bad * img_size/3, (batch_size,1,1))
-    weights_ugly = np.reshape(num_ugly*img_size/3, (batch_size,1,1))
+    num_good = np.sum(target_batch[:,:,:,0], (1,2))  + epsilon#should have shape [batch_size] +
+    num_bad =  np.sum(target_batch[:,:,:,1], (1,2)) + epsilon#shoud have shape [batch_size]
+    num_ugly = np.sum(target_batch[:,:,:,2], (1,2)) + epsilon#should have shape [batch_size]
+    print(num_good, 'num_good')
+    print(num_bad, 'num_bad')
+    print(num_ugly, 'num_ugly')
+    print((num_good + num_bad + num_ugly) / img_size, 'should be 1 each')
+    weights_good = np.reshape((1/num_good) *img_size/3, (batch_size, 1,1))
+    weights_bad = np.reshape((1/num_bad) * img_size/3, (batch_size,1,1))
+    weights_ugly = np.reshape((1/num_ugly)*img_size/3, (batch_size,1,1))
+    print('weights gbu', [weights_good, weights_bad, weights_ugly])
     weights = np.stack([weights_good, weights_bad, weights_ugly], axis=-1)
+    print('weight_shape', weights.shape)
     weights_mapped = weights*target_batch
     weights_total = np.sum(weights_mapped, axis=-1)
+    #print('total weights', weights_total)
     print(weights_total.shape, 'weights shape')
+    print(np.mean(weights_total), 'mean weight')
+    weights_total = np.clip(weights_total, 1/batch_size, 100)
     return weights_total
 
 
