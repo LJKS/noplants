@@ -5,7 +5,10 @@ import numpy as np
 from datapipeline import Datapipeline
 from datetime import datetime
 import sys
+BATCH_SIZE = 4
 
+if 'batch_size' in sys.argv:
+    BATCH_SIZE = int(sys.argv[sys.argv.index('batch_size')+1])
 if 'gpu' in sys.argv:
     gpus = tf.config.experimental.list_physical_devices('GPU')
     tf.config.experimental.set_memory_growth(gpus[0], True)
@@ -135,5 +138,5 @@ def compute_update_weights(target_batch):
 if __name__ == "__main__":
     #load_data
     model = ProtoDense()
-    pipeline = Datapipeline('stem_data_cropped_container', 'stem_lbl_cropped_container')
+    pipeline = Datapipeline('stem_data_cropped_container', 'stem_lbl_cropped_container', BATCH_SIZE)
     train(model, pipeline, 3, 'models/proto_dense_1/')
