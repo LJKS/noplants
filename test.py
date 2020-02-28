@@ -4,14 +4,21 @@ import PIL
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import tensorflow as tf
+import numpy as np
+rand_crop = True
+gpus = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(gpus[0], True)
+
 num_tests =10
 model = proto.ProtoDense()
-model.load_weights("models/proto_dense_1/model2020-02-27_14:21:03.132565")
+model.load_weights("models/proto_dense_1/model2020-02-27_15:05:53.878598")
 origin_target_directory = 'stem_lbl_human'
 origin_data_directory = 'stem_data'
 pic_names = listdir(origin_data_directory)
 
 for i in range(num_tests):
+    rand_seed = np.random.randint(0,100000)
     rand_img_name = np.random.choice(pic_names)
     data_file = origin_data_directory + '/' + rand_img_name
     target_file = origin_target_directory + '/' + rand_img_name
@@ -19,6 +26,8 @@ for i in range(num_tests):
     print(np.max(data_img))
     print(np.min(data_img))
     target_img = np.asarray(PIL.Image.open(target_file))
+    data_img=tf.image.random_crop(data_img, (256,256,3), seed=rand_seed)
+    target_img=tf.image.random_crop(target_img, (256,256,3), seed=rand_seed)
     data_img = np.expand_dims(data_img, 0)
     print(data_img.shape)
     t_1 = time.time()

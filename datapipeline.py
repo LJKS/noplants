@@ -17,8 +17,8 @@ class Datapipeline:
         #target_datagen.fit(masks, augment=True, seed=seed)
 
     def get_generator(self):
-        image_generator = self.image_datagen.flow_from_directory(self.data_dir, class_mode=None, seed=self.seed, batch_size=8)
-        target_generator = self.target_datagen.flow_from_directory(self.target_dir, class_mode=None, seed=self.seed, batch_size=8)
+        image_generator = self.image_datagen.flow_from_directory(self.data_dir, class_mode=None, seed=self.seed, batch_size=3)
+        target_generator = self.target_datagen.flow_from_directory(self.target_dir, class_mode=None, seed=self.seed, batch_size=3)
         # combine generators into one which yields image and masks
         train_generator = zip(image_generator, target_generator)
         self.seed = np.random.randint(0,10000)
