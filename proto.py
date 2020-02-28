@@ -4,6 +4,11 @@ from tensorflow.keras import  Model
 import numpy as np
 from datapipeline import Datapipeline
 from datetime import datetime
+import sys
+
+if 'gpu' in sys.argv:
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    tf.config.experimental.set_memory_growth(gpus[0], True)
 
 class ProtoDense(Model):
     def __init__(self):
