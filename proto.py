@@ -8,28 +8,44 @@ from datetime import datetime
 class ProtoDense(Model):
     def __init__(self):
         super(ProtoDense, self).__init__()
-        self.block_1 = DenseBlock(12, 3, (5,5), (1,1))
-        self.block_2 = DenseBlock(12, 3, (5,5), (1,1))
+        self.block_1 = DenseBlock(6, 3, (5,5), (1,1))
+        self.block_2 = DenseBlock(12, 6, (5,5), (1,1), bottleneck=24)
+        self.block_3_s = DenseBlock(12,9,(5,5),(1,1),bottleneck=36)
+        self.block_3_b = DenseBlock(12,6, (5,5), (1,1), bottleneck=24)
+        self.block_4 = DenseBlock(12,6,(5,5),(1,1), bottleneck=24)
         self.read_outs = tf.keras.layers.Conv2D(filters=3, kernel_size=(1,1), strides=(1,1), padding='SAME', use_bias=False)
         self.optimizer = tf.keras.optimizers.Adam()
 
     def call(self, x):
-        print('model_call')
         x = self.block_1(x)
-        x = tf.nn.max_pool(x, (2,2), (1,1), 'SAME')
+        x = tf.nn.avg_pool(x, (2,2), (2,2), padding='SAME')
         x = self.block_2(x)
+        x_3_s = tf.nn.avg_pool(x, (2,2), (2,2), padding='SAME')
+        x_3_s = self.block_3_s(x_3_s)
+        x_3_s = repeat_2D(x_3_s)
+        x = self.block_3_b(x)
+        x = tf.concat([x,x_3_s],-1)
+        x = self.block_4(x)
         x = self.read_outs(x)
         x = tf.nn.softmax(x,-1)
         return x
 
 class DenseBlock(Layer):
-    def __init__(self, layers, filters, kernel_size, strides):
+    def __init__(self, layers, filters, kernel_size, strides, bottleneck=False):
         super(DenseBlock, self).__init__()
+        self.has_bottleneck = bottleneck!=False
         self.layers = [DenseLayer(filters, kernel_size, strides) for _ in range(layers)]
+        if bottleneck!=False:
+            self.bnlayers = [BNDenseLayer(filters, kernel_size, strides, bottleneck) for _ in range(layers)]
 
     def call(self, x):
-        for layer in self.layers:
-            x = layer(x)
+        if self.has_bottleneck == False:
+            for layer in self.layers:
+                x = layer(x)
+        else:
+            for bn, layer in zip(self.layers, self.bnlayers):
+                x = bn(x)
+                x = layer(x)
         return x
 
 
@@ -44,6 +60,22 @@ class DenseLayer(Layer):
         return feature_maps
 
 
+class BNDenseLayer(Layer):
+    def __init__(self, filters, kernel_size, strides, bottleneck_size):
+        super(BNDenseLayer, self).__init__()
+        self.bottleneck = tf.keras.layers.Conv2D(bottleneck_size, (1,1), (1,1), padding='SAME', activation=tf.nn.relu)
+        self.convolutions = tf.keras.layers.Conv2D(filters, kernel_size, strides, padding='SAME', activation=tf.nn.relu)
+
+    def call(self, x):
+        x = self.bottleneck(x)
+        new_feature_maps = self.convolutions(x)
+        feature_maps = tf.concat([new_feature_maps, x], -1)
+        return feature_maps
+
+def repeat_2D(tensor):
+    tensor = tf.repeat(tensor, 2, 1)
+    tensor = tf.repeat(tensor, 2, 2)
+    return tensor
 
 def train(model, pipeline, iters, model_dir):
     cce = tf.keras.losses.CategoricalCrossentropy()
@@ -53,6 +85,9 @@ def train(model, pipeline, iters, model_dir):
     print('starting training')
     for epoch in range(iters):
         for input, target in train_generator:
+            target = tf.convert_to_tensor(target)
+            target = tf.nn.avg_pool(target, (2,2), (2,2), 'SAME')
+            target = target.numpy()
             print('before tape')
             print('input shape', tf.shape(input))
             print('input_max', tf.reduce_max(input), 'out_max', tf.reduce_max(target))
