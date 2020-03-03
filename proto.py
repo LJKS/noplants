@@ -6,6 +6,7 @@ from datapipeline import Datapipeline
 import time
 import agg
 import sys
+from hyperparametrs import *
 BATCH_SIZE = 4
 CLOCK=False
 
@@ -16,9 +17,9 @@ if 'gpu' in sys.argv:
     tf.config.experimental.set_memory_growth(gpus[0], True)
 if 'clock' in sys.argv:
     CLOCK = True
+
 print(BATCH_SIZE, 'BATCH_SIZE')
-gpu = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(gpu[0], True)
+
 class ProtoDense(Model):
     def __init__(self):
         super(ProtoDense, self).__init__()
@@ -109,7 +110,7 @@ def train(model, pipeline, iters, model_dir):
             with tf.GradientTape() as tape:
                 predictions = model(input, training=True)
                 loss = cce(target, predictions, compute_update_weights(target))
-                #print('loss_shape', loss)
+                print('loss_shape', loss)
                 #print('got loss')
                 gradients = tape.gradient(loss, model.trainable_variables)
                 #print('got gradients')
@@ -162,5 +163,5 @@ class Clock:
 if __name__ == "__main__":
     #load_data
     model = ProtoDense()
-    pipeline = Datapipeline('stem_data_cropped_container', 'stem_lbl_cropped_container', BATCH_SIZE)
-    train(model, pipeline, 3, 'models/proto_advanced_dense_1/')
+    pipeline = Datapipeline( DATA_TRAIN, DATA_TRAIN_LBL, BATCH_SIZE)
+    train(model, pipeline, EPOCHS, MODEL_SAVE_DIR)

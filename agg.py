@@ -1,5 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from hyperparametrs import *
+
+SAVING_AFTER = SAVE_STEPS/100
+
 class Smoothing_aggregator:
     def __init__(self, path):
         self.aggregator_size = 100
@@ -13,7 +17,7 @@ class Smoothing_aggregator:
         if len(self.aggregator) >= self.aggregator_size:
             self.aggregated_vals.append(np.mean(np.asarray(self.aggregator)))
             self.aggregator = []
-            if len(self.aggregated_vals)%100==0:
+            if len(self.aggregated_vals)%SAVING_AFTER==0:
                 self.save_graphic()
                 return True
         return False

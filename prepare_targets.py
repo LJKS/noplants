@@ -43,11 +43,7 @@ for img_name in listdir(origin_data_directory):
         save_img_target.save(save_path_target)
         save_img_data = Image.fromarray(sub_img_data).convert('RGB')
         save_img_data.save(save_path_data)
-        plt.imshow(sub_img_data)
-        plt.show()
-        plt.imshow(sub_img_target)
-        plt.show()
-
+        
 """
 for img_str in listdir('lbl'):
     img_str_old = 'lbl/'+img_str
