@@ -4,8 +4,8 @@
 MODEL_SAVE_DIR = 'models/proto_advanced_dense_1/'
 DATA_TRAIN_LBL = 'stem_lbl_cropped_container'
 DATA_TRAIN = 'stem_data_cropped_container'
-EPOCHS = 2
-SAVE_STEPS = 10000
+EPOCHS = 1
+SAVE_STEPS = 100
 
 
 # Testing

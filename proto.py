@@ -119,6 +119,8 @@ def train(model, pipeline, iters, model_dir):
             if aggregator.update(np.mean(loss)):
                 model.save_weights(model_dir+'model_epoch'+str(epoch) + '_step_' + str(step))
             print(step)
+        print(epoch,"epoch")
+
 
 def compute_update_weights(target_batch):
     epsilon = 0.1
