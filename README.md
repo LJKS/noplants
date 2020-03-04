@@ -65,3 +65,22 @@ Don't worry if there are errors about gpu stuff in the beginning that is normal.
 
 ## Aggregator
 The aggregator handles tracking the loss and saving plots. We use a running average of the loss to smoothen the plots. Nothing needs to be adjusted here 
+
+## Testing 
+In order to test a model please adjust the respective prameters in the hyperparameters.py:
+
+``` python
+# Testing
+DATA_TEST = 'stem_data_cropped_container/stem_data_cropped' # size of pictures doesnt matter, original data usable as well
+DATA_TEST_LBL = 'stem_lbl_cropped_container/stem_lbl_cropped'
+BATCH_SIZE_TEST = 1
+NUM_TESTS = 1
+MODEL_TEST_DIR = "models/..." #path tho the model
+```
+Then run the test.py script. Include gpu if you are running cuda.
+```console
+(killingplants) usr@dev:~/noplants$ python test.py [gpu]
+```
+
+## Model
+We build a simple Dense Net from scratch using tensorflow 2.0 as specified by the following paper:https://arxiv.org/pdf/1608.06993.pdf
