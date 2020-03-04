@@ -4,7 +4,7 @@
 MODEL_SAVE_DIR = 'models/ad_one_pic_only_flip'
 DATA_TRAIN_LBL = 'stem_lbl_cropped_container'
 DATA_TRAIN = 'stem_data_cropped_container'
-EPOCHS = 1
+EPOCHS = 100
 SAVE_STEPS = 100
 
 
