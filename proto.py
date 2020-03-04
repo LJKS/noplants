@@ -6,6 +6,7 @@ from datapipeline import Datapipeline
 import time
 import agg
 import sys
+from matplotlib import pyplot as plt
 from hyperparametrs import *
 BATCH_SIZE = 4
 CLOCK=False
@@ -104,6 +105,13 @@ def train(model, pipeline, iters, model_dir):
             if CLOCK:
                 clock.clock()
             input, target = intar
+            plt.subplot(221)
+            img_i = np.squeeze(input)
+            img_t = np.squeeze(target)
+            plt.imshow(img_i)
+            plt.subplot(222)
+            plt.imshow(img_t)
+            plt.show()
             target = tf.convert_to_tensor(target)
             target = tf.nn.avg_pool(target, (2,2), (2,2), 'SAME')
             target = target.numpy()
@@ -117,7 +125,7 @@ def train(model, pipeline, iters, model_dir):
                 optimizer.apply_gradients(zip(gradients, model.trainable_variables))
                 #print('applied optimizer')
             if aggregator.update(np.mean(loss)):
-                model.save_weights(model_dir+'model_epoch'+str(epoch) + '_step_' + str(step))
+                model.save_weights(model_dir + '/'+'model_epoch'+str(epoch) + '_step_' + str(step))
             print(step)
         print(epoch,"epoch")
 
