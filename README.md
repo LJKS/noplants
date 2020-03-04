@@ -29,7 +29,39 @@ CROP_SIZE = (256, 256, 3)
 SAVE_LBL = 'stem_lbl_cropped_container/stem_lbl_cropped/' 
 SAVE_DATA = 'stem_data_cropped_container/stem_data_cropped/'
 ```
-After creating the saving paths as specified run the sript.
+After creating the saving paths as specified run the sript:
 ```console
 (killingplants) usr@dev:~/noplants$ python prepare_targets.py
 ```
+## Data pipeline
+The Data Pipeline does not has to be executed on its own but is used by the Netw when Training. It takes pictures from a specified Directory and applies varies sorts of data augmentation specified by
+```python
+self.data_gen_args = dict(....)
+```
+We use flipping and zooming on both and changing brightness only on the input data.
+Since we use the ImageDataGenerator() by keras, make sure that you specifiy the input path correctly: you have to build a contaner containing another dircetory with the actual images (See **Prepare targets**).
+
+## Training 
+To run the training adjust the following parameters in the hyperparameters.py script:
+
+```python
+# Training
+MODEL_SAVE_DIR = # directory where you want to save your models to
+DATA_TRAIN_LBL = 'stem_lbl_cropped_container' # please be aware in the containes needs to be another folder with the actual data
+DATA_TRAIN = 'stem_data_cropped_container'
+SAVE_STEPS = 100 # after how many training steps a model should be saved, don't go lower than 100
+```
+To run the traing activate the environment, go to the respective directory and run the proto.py script. If nothing is specified the training will run on a batch size of 4 using no gpu and does not how long a forward pass takes.
+However these things can be specified dircelty in the command line in the following way:
+
+```console
+(killingplants) usr@dev:~/noplants$ python proto.py [gpu] [batch_size] [value for batch_size] [clock]
+```
+On The Big Machine we recommend the following setup:
+```console
+(killingplants) usr@dev:~/noplants$ python proto.py gpu batch_size 24 # higher batch size will exhaust the gpu memory
+```
+Don't worry if there are errors about gpu stuff in the beginning that is normal.
+
+## Aggregator
+The aggregator handles tracking the loss and saving plots. We use a running average of the loss to smoothen the plots. Nothing needs to be adjusted here 
