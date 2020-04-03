@@ -30,12 +30,12 @@ class ProtoDense(Model):
         self.block_4 = DenseBlock(12,6,(5,5),(1,1), bottleneck=24)
         self.read_outs = tf.keras.layers.Conv2D(filters=3, kernel_size=(1,1), strides=(1,1), padding='SAME', use_bias=False)
         self.optimizer = tf.keras.optimizers.Adam()
-<<<<<<< HEAD
 
 
-=======
+
+
     @tf.function
->>>>>>> 94e00db73a2365e3fe5e593ca76248d9dcbb3a7c
+
     def call(self, x):
         x = self.block_1(x)
         x = tf.nn.avg_pool(x, (2,2), (2,2), padding='SAME')
@@ -107,51 +107,13 @@ def train(model, pipeline, iters, model_dir):
             if CLOCK:
                 print('total step')
                 clock.clock()
-
-            it_c = Clock()
             input, target = intar
-            plt.subplot(221)
-            plt.title("target")
-            plt.imshow(target[0])
             target = tf.convert_to_tensor(target)
             target = tf.nn.avg_pool(target, (2,2), (2,2), 'SAME')
             target = target.numpy()
-<<<<<<< HEAD
-            plt.subplot(222)
-            plt.title("input")
-            plt.imshow(input[0])
-            plt.subplot(223)
-            plt.title("target low resolution")
-            plt.imshow(target[0])
-            #print(np.unique(target, return_counts=True), "unique targets")
-            with tf.GradientTape() as tape:
-                predictions = model(input, training=True)
-                predictions_test = predictions.numpy()
-                plt.subplot(224)
-                plt.title("prediction")
-                plt.imshow(predictions_test[0])
-                plt.show()
-                print(predictions.shape, "shape prediction")
-                print(np.unique(predictions[0], return_counts=True), "uniques in prediction")
-                loss = cce(target, predictions, compute_update_weights(target))
-                #print('loss_shape', loss)
-                gradients = tape.gradient(loss, model.trainable_variables)
-                optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-            if aggregator.update(np.mean(loss)):
-=======
-            #print('intar c')
-            #it_c.clock()
-            #w_c = Clock()
             weights = compute_update_weights(target)
-            #print('weights_clock')
-            #w_c.clock()
-            #ts_c = Clock()
             loss = train_step(model, input, target, weights, optimizer, cce)
-            #print('ts clock')
-            #ts_c.clock()
-            #if_c = Clock()
             if aggregator.update(loss):
->>>>>>> 94e00db73a2365e3fe5e593ca76248d9dcbb3a7c
                 model.save_weights(model_dir + '/'+ '_step_' + str(step))
             if step%SAVE_STEPS==0:
                 print(step)
