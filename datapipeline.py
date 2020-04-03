@@ -9,7 +9,7 @@ class Datapipeline:
         self.target_dir = target_dir
         self.batch_size = batch_size
         # add data augmentation (brightness only adjusted on data not on target)
-        self.data_gen_args = dict(rescale=1./255, vertical_flip=True, horizontal_flip=True, zoom_range=[0.7,1.0])#rotation_range=90)
+        self.data_gen_args = dict(rescale=1./255, vertical_flip=True, horizontal_flip=True)#, zoom_range=[0.7,1.0])#rotation_range=90)
         self.image_datagen = ImageDataGenerator(**self.data_gen_args, brightness_range=[0.5,1.0])
         self.target_datagen = ImageDataGenerator(**self.data_gen_args)
         # Provide the same seed and keyword arguments to the fit and flow methods

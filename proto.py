@@ -32,6 +32,7 @@ class ProtoDense(Model):
         self.read_outs = tf.keras.layers.Conv2D(filters=3, kernel_size=(1,1), strides=(1,1), padding='SAME', use_bias=False)
         self.optimizer = tf.keras.optimizers.Adam()
 
+
     def call(self, x):
         x = self.block_1(x)
         x = tf.nn.avg_pool(x, (2,2), (2,2), padding='SAME')
@@ -54,6 +55,7 @@ class DenseBlock(Layer):
         if bottleneck!=False:
             self.bnlayers = [BNDenseLayer(filters, kernel_size, strides, bottleneck) for _ in range(layers)]
 
+    #@tf.function
     def call(self, x):
         if self.has_bottleneck == False:
             for layer in self.layers:
@@ -105,11 +107,28 @@ def train(model, pipeline, iters, model_dir):
             if CLOCK:
                 clock.clock()
             input, target = intar
+            plt.subplot(221)
+            plt.title("target")
+            plt.imshow(target[0])
             target = tf.convert_to_tensor(target)
             target = tf.nn.avg_pool(target, (2,2), (2,2), 'SAME')
             target = target.numpy()
+            plt.subplot(222)
+            plt.title("input")
+            plt.imshow(input[0])
+            plt.subplot(223)
+            plt.title("target low resolution")
+            plt.imshow(target[0])
+            #print(np.unique(target, return_counts=True), "unique targets")
             with tf.GradientTape() as tape:
                 predictions = model(input, training=True)
+                predictions_test = predictions.numpy()
+                plt.subplot(224)
+                plt.title("prediction")
+                plt.imshow(predictions_test[0])
+                plt.show()
+                print(predictions.shape, "shape prediction")
+                print(np.unique(predictions[0], return_counts=True), "uniques in prediction")
                 loss = cce(target, predictions, compute_update_weights(target))
                 #print('loss_shape', loss)
                 gradients = tape.gradient(loss, model.trainable_variables)
@@ -128,13 +147,16 @@ def compute_update_weights(target_batch):
     num_good = np.sum(target_batch[:,:,:,0], (1,2))  + epsilon#should have shape [batch_size] +
     num_bad =  np.sum(target_batch[:,:,:,1], (1,2)) + epsilon#shoud have shape [batch_size]
     num_ugly = np.sum(target_batch[:,:,:,2], (1,2)) + epsilon#should have shape [batch_size]
+    # weights = for each pixel state weight (small for ground, high for carrot)
     weights_good = np.reshape((1/num_good) *img_size/3, (batch_size, 1,1))
     weights_bad = np.reshape((1/num_bad) * img_size/3, (batch_size,1,1))
     weights_ugly = np.reshape((1/num_ugly)*img_size/3, (batch_size,1,1))
+    # get (batch_size, 1,1,3)
     weights = np.stack([weights_good, weights_bad, weights_ugly], axis=-1)
     weights_mapped = weights*target_batch
     weights_total = np.sum(weights_mapped, axis=-1)
     weights_total = np.clip(weights_total, 1/target_batch.shape[-1], 100)
+    print(weights_total.shape, "weights shape")
     return weights_total
 
 def plot_progress(losses, epoch, step, model_dir):
