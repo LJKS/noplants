@@ -8,8 +8,7 @@ import agg
 import sys
 from matplotlib import pyplot as plt
 from hyperparametrs import *
-BATCH_SIZE = 4
-CLOCK=False
+
 
 if 'batch_size' in sys.argv:
     BATCH_SIZE = int(sys.argv[sys.argv.index('batch_size')+1])
@@ -31,8 +30,12 @@ class ProtoDense(Model):
         self.block_4 = DenseBlock(12,6,(5,5),(1,1), bottleneck=24)
         self.read_outs = tf.keras.layers.Conv2D(filters=3, kernel_size=(1,1), strides=(1,1), padding='SAME', use_bias=False)
         self.optimizer = tf.keras.optimizers.Adam()
+<<<<<<< HEAD
 
 
+=======
+    @tf.function
+>>>>>>> 94e00db73a2365e3fe5e593ca76248d9dcbb3a7c
     def call(self, x):
         x = self.block_1(x)
         x = tf.nn.avg_pool(x, (2,2), (2,2), padding='SAME')
@@ -51,19 +54,16 @@ class DenseBlock(Layer):
     def __init__(self, layers, filters, kernel_size, strides, bottleneck=False):
         super(DenseBlock, self).__init__()
         self.has_bottleneck = bottleneck!=False
-        self.layers = [DenseLayer(filters, kernel_size, strides) for _ in range(layers)]
+
         if bottleneck!=False:
-            self.bnlayers = [BNDenseLayer(filters, kernel_size, strides, bottleneck) for _ in range(layers)]
+            self.layers = [BNDenseLayer(filters, kernel_size, strides, bottleneck) for _ in range(layers)]
+        else:
+            self.layers = [DenseLayer(filters, kernel_size, strides) for _ in range(layers)]
 
     #@tf.function
     def call(self, x):
-        if self.has_bottleneck == False:
-            for layer in self.layers:
-                x = layer(x)
-        else:
-            for bn, layer in zip(self.layers, self.bnlayers):
-                x = bn(x)
-                x = layer(x)
+        for layer in self.layers:
+            x = layer(x)
         return x
 
 
@@ -85,8 +85,8 @@ class BNDenseLayer(Layer):
         self.convolutions = tf.keras.layers.Conv2D(filters, kernel_size, strides, padding='SAME', activation=tf.nn.relu)
 
     def call(self, x):
-        x = self.bottleneck(x)
-        new_feature_maps = self.convolutions(x)
+        bottlenecked = self.bottleneck(x)
+        new_feature_maps = self.convolutions(bottlenecked)
         feature_maps = tf.concat([new_feature_maps, x], -1)
         return feature_maps
 
@@ -105,7 +105,10 @@ def train(model, pipeline, iters, model_dir):
     for epoch in range(iters):
         for step, intar in enumerate(train_generator):
             if CLOCK:
+                print('total step')
                 clock.clock()
+
+            it_c = Clock()
             input, target = intar
             plt.subplot(221)
             plt.title("target")
@@ -113,6 +116,7 @@ def train(model, pipeline, iters, model_dir):
             target = tf.convert_to_tensor(target)
             target = tf.nn.avg_pool(target, (2,2), (2,2), 'SAME')
             target = target.numpy()
+<<<<<<< HEAD
             plt.subplot(222)
             plt.title("input")
             plt.imshow(input[0])
@@ -134,13 +138,36 @@ def train(model, pipeline, iters, model_dir):
                 gradients = tape.gradient(loss, model.trainable_variables)
                 optimizer.apply_gradients(zip(gradients, model.trainable_variables))
             if aggregator.update(np.mean(loss)):
+=======
+            #print('intar c')
+            #it_c.clock()
+            #w_c = Clock()
+            weights = compute_update_weights(target)
+            #print('weights_clock')
+            #w_c.clock()
+            #ts_c = Clock()
+            loss = train_step(model, input, target, weights, optimizer, cce)
+            #print('ts clock')
+            #ts_c.clock()
+            #if_c = Clock()
+            if aggregator.update(loss):
+>>>>>>> 94e00db73a2365e3fe5e593ca76248d9dcbb3a7c
                 model.save_weights(model_dir + '/'+ '_step_' + str(step))
             if step%SAVE_STEPS==0:
                 print(step)
-
+            #print('if_clock')
+            #if_c.clock()
+@tf.function
+def train_step(model, input, target, weights, optimizer, cce):
+    with tf.GradientTape() as tape:
+        predictions = model(input, training=True)
+        loss = cce(target, predictions, weights)
+        gradients = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    return loss
 
 def compute_update_weights(target_batch):
-    epsilon = 0.1
+    epsilon = 0.0001
     target_batch = target_batch.astype(np.float64)
     batch_size = target_batch.shape[0]
     img_size = target_batch.shape[1]*target_batch.shape[2]

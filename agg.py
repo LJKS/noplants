@@ -6,17 +6,23 @@ SAVING_AFTER = SAVE_STEPS/100
 
 class Smoothing_aggregator:
     def __init__(self, path):
-        self.aggregator_size = 100
+        self.aggregator_size = 0
+        self.aggregator_max_size = 100
         self.aggregator = []
         self.aggregated_vals = []
         self.num_grapic = 0
         self.path = path
 
-    def update(self, val):
-        self.aggregator.append(val)
-        if len(self.aggregator) >= self.aggregator_size:
+    def update(self, loss_array):
+        #print(loss_array.shape)
+        self.aggregator.append(loss_array)
+
+        self.aggregator_size+=1
+        if self.aggregator_size >= self.aggregator_max_size:
             self.aggregated_vals.append(np.mean(np.asarray(self.aggregator)))
+            print(self.aggregated_vals, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             self.aggregator = []
+            self.aggregator_size = 0
             if len(self.aggregated_vals)%SAVING_AFTER==0:
                 self.save_graphic()
                 return True

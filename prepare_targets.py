@@ -29,6 +29,7 @@ for img_name in listdir(ORIGIN_DATA_DIRECTORY):
         img_target = Image.open(target_source_path)
         img_target = img_target.convert('RGB')
         img_target = np.array(img_target)
+        img_target = img_target.astype(np.uint8)
     img_data = image.imread(data_source_path)
     img_data = img_data*255
     img_data = img_data.astype(np.uint8)
