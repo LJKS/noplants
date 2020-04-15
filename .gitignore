@@ -7,3 +7,8 @@ stem_target_container_full_pic
 stem_data
 stem_lbl_human
 plant_killing_models
+plots
+results
+result_imgs
+seg_data_cropped_container
+seg_lbl_cropped_container

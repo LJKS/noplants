@@ -109,4 +109,4 @@ if __name__ == "__main__":
     #load_data
     model = ProtoDense()
     pipeline = Datapipeline('stem_data_cropped_container', 'stem_lbl_cropped_container')
-    train(model, pipeline, 3, 'models/proto_dense_2/')
+    train(model, pipeline, 3, 'models/p')
