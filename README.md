@@ -96,3 +96,6 @@ Then run the test.py script. Include gpu if you are running cuda.
 
 ## Model
 We build a simple Dense Net from scratch using tensorflow 2.0 as specified by the following paper:https://arxiv.org/pdf/1608.06993.pdf
+
+The Network gets two input, target pairs, one for stem data and one for segmentation data. The first few layers are shared, then the architecture splits in two and there are two readout layers, one for stem and one for segmentation prediction. 
+
