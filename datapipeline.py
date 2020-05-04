@@ -14,8 +14,7 @@ class Datapipeline:
         self.target_datagen = ImageDataGenerator(**self.data_gen_args)
         # Provide the same seed and keyword arguments to the fit and flow methods
         self.seed = np.random.randint(0,10000)
-        #image_datagen.fit(images, augment=True, seed=seed)
-        #target_datagen.fit(masks, augment=True, seed=seed)
+
 
     def get_generator(self):
         rand_seed = np.random.rand()

@@ -1,8 +1,10 @@
 mass_lbl_human
 stem_lbl_cropped_container
+seg_lbl_cropped_container
 mass_data
 models
 stem_data_cropped_container
+seg_data_ccopped_container
 stem_target_container_full_pic
 stem_data
 stem_lbl_human
@@ -12,3 +14,4 @@ results
 result_imgs
 seg_data_cropped_container
 seg_lbl_cropped_container
+randfor.py

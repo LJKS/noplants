@@ -18,7 +18,7 @@ if 'gpu' in sys.argv:
     tf.config.experimental.set_memory_growth(gpus[0], True)
 
 
-model = proto_stem_and_seg.ProtoDense()
+model = proto.ProtoDense()
 model.load_weights(MODEL_TEST_DIR)
 origin_target_directory = DATA_TEST_LBL
 origin_data_directory =  DATA_TEST
