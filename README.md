@@ -1,4 +1,4 @@
-# noplants
+# noplants - an ANN based weed-recognition software
 
 ## Setting up a conda environment
 In ourder to use our code certain dependencies must be met. We propose setting up a conda environment.
